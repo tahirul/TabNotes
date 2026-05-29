@@ -1,0 +1,459 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+  --tabnotes-bg: #f7f1e8;
+  --tabnotes-surface: rgba(255, 255, 255, 0.8);
+  --tabnotes-surface-alt: rgba(31, 31, 31, 0.88);
+  --tabnotes-border: rgba(57, 44, 33, 0.18);
+  --tabnotes-text: #1f1a17;
+  --tabnotes-muted: rgba(31, 26, 23, 0.7);
+  --tabnotes-accent: #8a5a44;
+  --tabnotes-radius: 12px;
+  font-family: 'Avenir Next', 'Segoe UI', sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tabnotes-bg: #1f1f1f;
+    --tabnotes-surface: rgba(34, 34, 34, 0.94);
+    --tabnotes-surface-alt: rgba(43, 43, 43, 0.96);
+    --tabnotes-border: rgba(242, 234, 226, 0.14);
+    --tabnotes-text: #f6efe6;
+    --tabnotes-muted: rgba(246, 239, 230, 0.74);
+    --tabnotes-accent: #d7a386;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--tabnotes-bg);
+  color: var(--tabnotes-text);
+}
+
+body {
+  font-family: inherit;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 1px solid var(--tabnotes-border);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  padding: 0.45rem 0.8rem;
+  cursor: pointer;
+}
+
+.tabnotes-app {
+  display: grid;
+  gap: 1rem;
+  min-height: 100vh;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.tabnotes-dashboard {
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.tabnotes-dashboard.is-sidebar-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+.tabnotes-column {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.tabnotes-column-center {
+  width: clamp(600px, calc(100% - 100px), 900px);
+  max-width: 100%;
+  margin: 0 auto;
+  height: 100vh;
+  min-height: 0;
+  box-sizing: border-box;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+}
+
+.tabnotes-panel {
+  border: 1px solid var(--tabnotes-border);
+  border-radius: var(--tabnotes-radius);
+  background: var(--tabnotes-surface);
+  padding: 0.9rem;
+}
+
+.tabnotes-sidebar {
+  min-width: 0;
+}
+
+.tabnotes-sidebar-panel {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  padding: 0.6rem 0.35rem;
+}
+
+.tabnotes-sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.tabnotes-sidebar-top .tabnotes-label,
+.tabnotes-settings-panel h2,
+.tabnotes-center-title-row h1 {
+  margin: 0;
+}
+
+.tabnotes-doc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.25rem;
+  align-content: start;
+}
+
+.tabnotes-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 8px;
+  padding: 0.1rem 0.2rem;
+}
+
+.tabnotes-doc-row.is-active {
+  background: rgba(138, 90, 68, 0.14);
+}
+
+.tabnotes-doc-select {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0.25rem 0.2rem;
+  text-align: left;
+  background: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabnotes-doc-menu {
+  position: relative;
+}
+
+.tabnotes-ellipsis {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.25rem 0.45rem;
+  line-height: 1;
+  min-width: 2rem;
+}
+
+.tabnotes-menu-popover {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 8rem;
+  border: 1px solid var(--tabnotes-border);
+  border-radius: 10px;
+  background: var(--tabnotes-surface);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  padding: 0.35rem;
+  display: grid;
+  gap: 0.25rem;
+  z-index: 5;
+}
+
+.tabnotes-menu-popover button {
+  border-radius: 8px;
+  text-align: left;
+  border: 0;
+  padding: 0.45rem 0.55rem;
+}
+
+.tabnotes-menu-popover button:hover {
+  background: rgba(138, 90, 68, 0.12);
+}
+
+.tabnotes-sidebar-divider {
+  border-top: 1px solid var(--tabnotes-border);
+}
+
+.tabnotes-label {
+  margin: 0;
+  color: var(--tabnotes-muted);
+  font-size: 0.84rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tabnotes-settings-link {
+  justify-self: start;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  align-self: end;
+  padding: 0.35rem 0.45rem;
+}
+
+.tabnotes-sidebar.is-collapsed .tabnotes-doc-list,
+.tabnotes-sidebar.is-collapsed .tabnotes-sidebar-divider,
+.tabnotes-sidebar.is-collapsed .tabnotes-label {
+  display: none;
+}
+
+.tabnotes-sidebar.is-collapsed .tabnotes-sidebar-top h2 {
+  display: none;
+}
+
+.tabnotes-sidebar.is-collapsed .tabnotes-sidebar-top .tabnotes-label {
+  display: none;
+}
+
+.tabnotes-sidebar.is-collapsed .tabnotes-sidebar-top,
+.tabnotes-sidebar.is-collapsed .tabnotes-settings-link {
+  justify-self: center;
+}
+
+.tabnotes-search-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tabnotes-search-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--tabnotes-border);
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background: transparent;
+  color: inherit;
+}
+
+.tabnotes-center-editor {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tabnotes-center-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tabnotes-title-heading {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  border-bottom: 0;
+  padding: 0.1rem 0;
+}
+
+.tabnotes-title-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  padding: 0.1rem 0;
+}
+
+.tabnotes-title-input:focus {
+  outline: none;
+}
+
+.tabnotes-link-chip-footer {
+  border-top: 0;
+  padding-top: 0;
+  align-self: end;
+}
+
+.tabnotes-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.tabnotes-tag-link {
+  border-radius: 999px;
+  border: 1px solid var(--tabnotes-border);
+  background: rgba(138, 90, 68, 0.12);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.tabnotes-editor-shell {
+  display: grid;
+  gap: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tabnotes-milkdown {
+  min-height: 0;
+  height: 100%;
+  border: 1px solid var(--tabnotes-border);
+  border-radius: 14px;
+  padding: 1rem;
+  background: var(--tabnotes-surface-alt);
+  overflow: auto;
+}
+
+.tabnotes-milkdown .ProseMirror {
+  outline: none;
+  min-height: 100%;
+  color: var(--tabnotes-text);
+}
+
+.tabnotes-milkdown .ProseMirror p {
+  margin: 0 0 0.75rem;
+}
+
+.tabnotes-settings-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tabnotes-settings-panel p,
+.tabnotes-quick-empty p {
+  margin: 0;
+  color: var(--tabnotes-muted);
+}
+
+.tabnotes-sidepanel-quick {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: start;
+  min-height: 100vh;
+}
+
+.tabnotes-sidepanel {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: start;
+  min-height: 100vh;
+  gap: 0.35rem;
+}
+
+.tabnotes-sidepanel-links {
+  margin-top: auto;
+}
+
+.tabnotes-header-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 0;
+  line-height: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.tabnotes-header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1;
+  justify-content: center;
+}
+
+.tabnotes-header-title h1,
+.tabnotes-header-title span {
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.tabnotes-header-title h1 {
+  font-size: 1rem;
+}
+
+.tabnotes-muted {
+  color: var(--tabnotes-muted);
+}
+
+.tabnotes-quick-links-panel {
+  align-self: start;
+}
+
+@media (max-width: 980px) {
+  .tabnotes-dashboard {
+    grid-template-columns: 1fr;
+    gap: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .tabnotes-dashboard.is-sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .tabnotes-column-center {
+    width: 100%;
+    margin: 0;
+    height: auto;
+    min-height: 0;
+    padding: 0 1rem 1rem;
+  }
+
+  .tabnotes-sidebar-panel {
+    min-height: auto;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .tabnotes-sidebar.is-collapsed .tabnotes-sidebar-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: auto;
+  }
+
+  .tabnotes-sidebar.is-collapsed .tabnotes-sidebar-top,
+  .tabnotes-sidebar.is-collapsed .tabnotes-settings-link {
+    justify-self: auto;
+    align-self: auto;
+  }
+
+  .tabnotes-sidebar.is-collapsed .tabnotes-sidebar-top {
+    padding: 0;
+  }
+}

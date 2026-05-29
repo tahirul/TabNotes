@@ -1,0 +1,1 @@
+{"manifest_version":3,"name":"TabNotes","description":"Context-aware notes for Chrome tab groups.","version":"0.1.0","permissions":["storage","tabs","tabGroups","sidePanel"],"action":{"default_title":"TabNotes"},"side_panel":{"default_path":"sidepanel.html"},"chrome_url_overrides":{"newtab":"newtab.html"},"background":{"service_worker":"background.js"}}
