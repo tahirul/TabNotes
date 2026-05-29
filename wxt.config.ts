@@ -4,7 +4,7 @@ export default defineConfig({
   manifest: {
     name: 'TabNotes',
     description: 'Chrome extension home page and side panel for taking notes on your grouped tabs.',
-    version: '1.0',
+    version: '1.1',
     permissions: ['storage', 'tabs', 'tabGroups', 'sidePanel'],
     action: {
       default_title: 'TabNotes',

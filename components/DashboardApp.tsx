@@ -1,8 +1,3 @@
-import { defaultValueCtx, Editor, rootCtx } from '@milkdown/core';
-import { commonmark } from '@milkdown/kit/preset/commonmark';
-import { gfm } from '@milkdown/kit/preset/gfm';
-import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
-import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   archiveNote,
@@ -17,7 +12,10 @@ import {
   upsertNote,
 } from '../shared/storage';
 import { createScratchpadContext } from '../shared/groupKey';
+import { applyThemeMode, readThemeMode, subscribeToThemeMode, writeThemeMode } from '../shared/theme';
 import type { ActiveContext, NoteRecord, TabNotesState } from '../shared/types';
+import type { ThemeMode } from '../shared/theme';
+import { CrepeEditor } from './CrepeEditor';
 
 function useTabNotesState() {
   const [state, setState] = useState<TabNotesState>({ activeContext: null, notes: {} });
@@ -45,56 +43,6 @@ function useTabNotesState() {
   }, []);
 
   return [state, setState] as const;
-}
-
-interface MarkdownEditorInnerProps {
-  contextKey: string;
-  initialValue: string;
-  onMarkdownChange: (contextKey: string, markdown: string) => void;
-}
-
-function MarkdownEditorInner({ contextKey, initialValue, onMarkdownChange }: MarkdownEditorInnerProps) {
-  const onChangeRef = useRef(onMarkdownChange);
-
-  useEffect(() => {
-    onChangeRef.current = onMarkdownChange;
-  }, [onMarkdownChange]);
-
-  useEditor(() => {
-    return Editor.make()
-      .config((ctx) => {
-        ctx.set(defaultValueCtx, initialValue);
-        ctx.get(listenerCtx).markdownUpdated((_editorCtx, markdown) => {
-          onChangeRef.current(contextKey, markdown);
-        });
-      })
-      .config((ctx) => {
-        ctx.set(rootCtx, document.querySelector('#dashboard-milkdown-root') as HTMLElement);
-      })
-      .use(commonmark)
-      .use(gfm)
-      .use(listener);
-  });
-
-  return (
-    <div id="dashboard-milkdown-root" className="tabnotes-milkdown prose prose-sm max-w-none" aria-label="Markdown editor">
-      <Milkdown />
-    </div>
-  );
-}
-
-interface MarkdownEditorProps {
-  contextKey: string;
-  value: string;
-  onMarkdownChange: (contextKey: string, markdown: string) => void;
-}
-
-function MarkdownEditor({ contextKey, value, onMarkdownChange }: MarkdownEditorProps) {
-  return (
-    <MilkdownProvider key={contextKey}>
-      <MarkdownEditorInner contextKey={contextKey} initialValue={value} onMarkdownChange={onMarkdownChange} />
-    </MilkdownProvider>
-  );
 }
 
 function contextFromNote(note: NoteRecord): ActiveContext {
@@ -150,12 +98,51 @@ function normalizeGroupColor(color?: string): 'grey' | 'blue' | 'red' | 'yellow'
   }
 }
 
+function truncateChipTitle(title: string, limit = 30): string {
+  if (title.length <= limit) {
+    return title;
+  }
+
+  return `${title.slice(0, limit)}...`;
+}
+
+function SlidersIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="tabnotes-icon-svg">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
+      />
+    </svg>
+  );
+}
+
+function ChevronsLeftIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="tabnotes-icon-svg">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5" />
+    </svg>
+  );
+}
+
+function ChevronsRightIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="tabnotes-icon-svg">
+      <path strokeLinecap="round" strokeLinejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
+    </svg>
+  );
+}
+
 export function DashboardApp() {
   const [state, setState] = useTabNotesState();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
   const [selectedKey, setSelectedKey] = useState<string>('global:scratchpad');
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
 
   const allNotes = useMemo(() => Object.values(state.notes), [state.notes]);
   const activeNotes = useMemo(
@@ -200,6 +187,44 @@ export function DashboardApp() {
 
     window.addEventListener('mousedown', onMouseDown);
     return () => window.removeEventListener('mousedown', onMouseDown);
+  }, []);
+
+  useEffect(() => {
+    const onMouseDown = (event: MouseEvent) => {
+      if (!settingsRef.current) {
+        return;
+      }
+
+      if (!settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', onMouseDown);
+    return () => window.removeEventListener('mousedown', onMouseDown);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    void readThemeMode().then((mode) => {
+      if (!alive) {
+        return;
+      }
+
+      setThemeMode(mode);
+      applyThemeMode(mode);
+    });
+
+    const unsubscribe = subscribeToThemeMode((mode) => {
+      setThemeMode(mode);
+      applyThemeMode(mode);
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
   }, []);
 
   async function selectNote(note: NoteRecord) {
@@ -305,6 +330,13 @@ export function DashboardApp() {
   async function handlePinToggle(note: NoteRecord) {
     await setPinnedState(note.key, !note.pinned);
     setOpenMenuKey(null);
+  }
+
+  async function handleThemeChange(mode: ThemeMode) {
+    setThemeMode(mode);
+    applyThemeMode(mode);
+    await writeThemeMode(mode);
+    setIsSettingsOpen(false);
   }
 
   async function openUrlInDocGroup(url: string) {
@@ -419,8 +451,14 @@ export function DashboardApp() {
         <section className="tabnotes-sidebar-panel">
           <div className="tabnotes-sidebar-top">
             <p className="tabnotes-label">Docs</p>
-            <button type="button" onClick={() => setIsSidebarCollapsed((value) => !value)}>
-              {isSidebarCollapsed ? '>>' : '<<'}
+            <button
+              type="button"
+              className="tabnotes-icon-button"
+              onClick={() => setIsSidebarCollapsed((value) => !value)}
+              aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {isSidebarCollapsed ? <ChevronsRightIcon /> : <ChevronsLeftIcon />}
             </button>
           </div>
 
@@ -434,10 +472,31 @@ export function DashboardApp() {
             </>
           ) : null}
 
-          <button type="button" className="tabnotes-settings-link">
-            <span aria-hidden="true">[ ]</span>
-            {!isSidebarCollapsed ? <span>Settings</span> : null}
-          </button>
+          <div className="tabnotes-settings-anchor" ref={settingsRef}>
+            {isSettingsOpen ? (
+              <div className="tabnotes-settings-menu" role="menu" aria-label="Theme settings">
+                <button type="button" className={themeMode === 'light' ? 'is-selected' : ''} onClick={() => void handleThemeChange('light')}>
+                  Light
+                </button>
+                <button type="button" className={themeMode === 'dark' ? 'is-selected' : ''} onClick={() => void handleThemeChange('dark')}>
+                  Dark
+                </button>
+                <button type="button" className={themeMode === 'system' ? 'is-selected' : ''} onClick={() => void handleThemeChange('system')}>
+                  System
+                </button>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              className="tabnotes-settings-link tabnotes-icon-button"
+              onClick={() => setIsSettingsOpen((value) => !value)}
+              aria-label="Open theme settings"
+              title="Open theme settings"
+            >
+              <SlidersIcon />
+            </button>
+          </div>
         </section>
       </aside>
 
@@ -471,7 +530,7 @@ export function DashboardApp() {
           </div>
 
           <section className="tabnotes-editor-shell">
-            <MarkdownEditor
+            <CrepeEditor
               key={selectedNote.key}
               contextKey={selectedNote.key}
               value={selectedNote.body || ''}
@@ -487,9 +546,10 @@ export function DashboardApp() {
                     key={`${selectedNote.key}:${link.url}:${index}`}
                     type="button"
                     className="tabnotes-tag-link"
+                    title={link.title}
                     onClick={() => void handleLinkClick(link)}
                   >
-                    {link.title}
+                    {truncateChipTitle(link.title)}
                   </button>
                 ))}
               </div>

@@ -1,2 +1,9 @@
-/docs
-node_modules
+node_modules/
+.output/
+.wxt/
+dist/
+coverage/
+
+*.log
+
+/docs/

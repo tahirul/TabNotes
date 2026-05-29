@@ -1,6 +1,17 @@
 # TabNotes
 Chrome extension home page and side panel for taking notes on your grouped tabs.
 
+## Screenshots
+
+### Dashboard View
+![TabNotes dashboard](project_images/Screenshot%202026-05-29%20194902.png)
+
+### Sidebar + Editor Flow
+![TabNotes sidebar and editor](project_images/Screenshot%202026-05-29%20194933.png)
+
+### Side Panel View
+![TabNotes side panel](project_images/Screenshot%202026-05-29%20195743.png)
+
 ## What It Does
 TabNotes gives you a markdown notepage with your Chrome tabs:
 - A New Tab dashboard for managing and editing notes.

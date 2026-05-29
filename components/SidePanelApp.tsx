@@ -1,12 +1,9 @@
-import { defaultValueCtx, Editor, rootCtx } from '@milkdown/core';
-import { commonmark } from '@milkdown/kit/preset/commonmark';
-import { gfm } from '@milkdown/kit/preset/gfm';
-import { listener, listenerCtx } from '@milkdown/kit/plugin/listener';
-import { Milkdown, MilkdownProvider, useEditor } from '@milkdown/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createScratchpadContext } from '../shared/groupKey';
 import { createDefaultNote, readState, subscribeToStateChanges, upsertNote } from '../shared/storage';
+import { applyThemeMode, readThemeMode, subscribeToThemeMode } from '../shared/theme';
 import type { ActiveContext, NoteRecord, TabNotesState } from '../shared/types';
+import { CrepeEditor } from './CrepeEditor';
 
 function useTabNotesState() {
   const [state, setState] = useState<TabNotesState>({ activeContext: null, notes: {} });
@@ -44,60 +41,37 @@ function ensureActiveContext(state: TabNotesState): ActiveContext {
   return createScratchpadContext(0);
 }
 
-interface MarkdownEditorInnerProps {
-  contextKey: string;
-  initialValue: string;
-  onMarkdownChange: (contextKey: string, markdown: string) => void;
-}
+function truncateChipTitle(title: string, limit = 30): string {
+  if (title.length <= limit) {
+    return title;
+  }
 
-function MarkdownEditorInner({ contextKey, initialValue, onMarkdownChange }: MarkdownEditorInnerProps) {
-  const onChangeRef = useRef(onMarkdownChange);
-
-  useEffect(() => {
-    onChangeRef.current = onMarkdownChange;
-  }, [onMarkdownChange]);
-
-  useEditor(() => {
-    return Editor.make()
-      .config((ctx) => {
-        ctx.set(defaultValueCtx, initialValue);
-        ctx.get(listenerCtx).markdownUpdated((_editorCtx, markdown) => {
-          onChangeRef.current(contextKey, markdown);
-        });
-      })
-      .config((ctx) => {
-        ctx.set(rootCtx, document.querySelector('#sidepanel-milkdown-root') as HTMLElement);
-      })
-      .use(commonmark)
-      .use(gfm)
-      .use(listener);
-  });
-
-  return (
-    <div id="sidepanel-milkdown-root" className="tabnotes-milkdown prose prose-sm max-w-none" aria-label="Markdown editor">
-      <Milkdown />
-    </div>
-  );
-}
-
-interface MarkdownEditorProps {
-  contextKey: string;
-  value: string;
-  onMarkdownChange: (contextKey: string, markdown: string) => void;
-}
-
-function MarkdownEditor({ contextKey, value, onMarkdownChange }: MarkdownEditorProps) {
-  return (
-    <MilkdownProvider key={contextKey}>
-      <MarkdownEditorInner contextKey={contextKey} initialValue={value} onMarkdownChange={onMarkdownChange} />
-    </MilkdownProvider>
-  );
+  return `${title.slice(0, limit)}...`;
 }
 
 export function SidePanelApp() {
   const [state, setState] = useTabNotesState();
   const activeContext = useMemo(() => ensureActiveContext(state), [state]);
   const body = state.notes[activeContext.key]?.body || '';
+
+  useEffect(() => {
+    let alive = true;
+
+    void readThemeMode().then((mode) => {
+      if (alive) {
+        applyThemeMode(mode);
+      }
+    });
+
+    const unsubscribe = subscribeToThemeMode((mode) => {
+      applyThemeMode(mode);
+    });
+
+    return () => {
+      alive = false;
+      unsubscribe();
+    };
+  }, []);
 
   async function persistBody(context: ActiveContext, nextBody: string) {
     const updated: NoteRecord = {
@@ -161,7 +135,7 @@ export function SidePanelApp() {
       </header>
 
       <section className="tabnotes-editor-shell">
-        <MarkdownEditor
+        <CrepeEditor
           key={activeContext.key}
           contextKey={activeContext.key}
           value={body}
@@ -177,9 +151,10 @@ export function SidePanelApp() {
                 key={`${tab.tabId}:${tab.title}`}
                 type="button"
                 className="tabnotes-tag-link"
+                title={tab.title}
                 onClick={() => void handleTabSwitch(tab.tabId)}
               >
-                {tab.title}
+                {truncateChipTitle(tab.title)}
               </button>
             ))}
           </div>
